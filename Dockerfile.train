@@ -1,0 +1,7 @@
+FROM python:2.7-stretch
+ADD requirements.txt /root
+ADD train.py /root
+RUN pip install -r /root/requirements.txt
+WORKDIR /output/
+VOLUME /output
+CMD ["python", "/root/train.py"]
