@@ -2,6 +2,8 @@ import paddle.v2 as paddle
 import gzip
 
 train_reader = paddle.dataset.mnist.train()
+test_reader = paddle.dataset.mnist.test()
+
 paddle.init(trainer_count=3)
 img = paddle.layer.data(name="img", type=paddle.data_type.dense_vector(784))
 hidden = paddle.layer.fc(input=img, size=200, act=paddle.activation.Tanh())
@@ -27,19 +29,19 @@ trainer = paddle.trainer.SGD(cost=cost, parameters=params,
 
 def train_event_handler(ev):
     if isinstance(ev, paddle.event.BeginPass):
-        print 'Start train ' + str(ev.pass_id)
+        print 'Start train pass ' + str(ev.pass_id)
     elif isinstance(ev, paddle.event.EndIteration):
         if (ev.batch_id + 1) % 100 == 0:
-            print 'Train Pass %d, Batch %d, Cost = %.2f ' % (
-                ev.pass_id, ev.batch_id + 1, ev.cost)
+            print 'Train Pass %d, Batch %d, Cost = %.2f %s' % (
+                ev.pass_id, ev.batch_id + 1, ev.cost, ev.metrics)
     elif isinstance(ev, paddle.event.EndPass):
-        print 'Saving Pass %d to param_%d.tar.gz' % (ev.pass_id, ev.pass_id)
+        result = trainer.test(reader=paddle.batch(test_reader, 100))
+        print 'Saving Pass %d to param_%d.tar.gz, test %s' % (ev.pass_id, ev.pass_id, result.metrics)
         with gzip.open('param_%d.tar.gz' % ev.pass_id, 'w') as f:
             params.to_tar(f)
 
-
 trainer.train(
-    reader=paddle.batch(paddle.reader.buffered(train_reader, 8192), 100),
+    reader=paddle.batch(paddle.reader.shuffle(train_reader, 81920), 100),
     num_passes=100,
     event_handler=train_event_handler)
 
