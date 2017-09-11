@@ -37,7 +37,7 @@ def train_event_handler(ev):
     elif isinstance(ev, paddle.event.EndPass):
         result = trainer.test(reader=paddle.batch(test_reader, 100))
         print 'Saving Pass %d to param_%d.tar.gz, test %s' % (ev.pass_id, ev.pass_id, result.metrics)
-        with gzip.open('param_%d.tar.gz' % ev.pass_id, 'w') as f:
+        with open('param_%d.tar' % ev.pass_id, 'w') as f:
             params.to_tar(f)
 
 trainer.train(
