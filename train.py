@@ -1,4 +1,5 @@
 import paddle.v2 as paddle
+import cPickle
 
 train_reader = paddle.dataset.mnist.train()
 test_reader = paddle.dataset.mnist.test()
@@ -12,9 +13,8 @@ prediction = paddle.layer.fc(input=hidden, size=10,
 
 # Save the inference topology to protobuf.
 inference_topology = paddle.topology.Topology(layers=prediction)
-with open("inference.protobin", 'wb') as f:
-    proto = inference_topology.proto()
-    f.write(proto.SerializeToString())
+with open("inference_topology.pkl", 'wb') as f:
+    inference_topology.serialize_for_inference(f)
 
 cost = paddle.layer.classification_cost(input=prediction,
                                         label=paddle.layer.data(name="lbl",

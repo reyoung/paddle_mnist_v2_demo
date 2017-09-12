@@ -103,4 +103,5 @@ ENV/
 *.tar.gz
 *.protobin
 .idea
-.tar
+*.tar
+*.pkl
