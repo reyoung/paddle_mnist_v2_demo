@@ -1,5 +1,4 @@
 import paddle.v2 as paddle
-import gzip
 
 train_reader = paddle.dataset.mnist.train()
 test_reader = paddle.dataset.mnist.test()
