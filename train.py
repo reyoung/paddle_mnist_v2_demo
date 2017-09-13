@@ -4,12 +4,33 @@ import cPickle
 train_reader = paddle.dataset.mnist.train()
 test_reader = paddle.dataset.mnist.test()
 
-paddle.init(trainer_count=3)
+def convolutional_neural_network(img):
+    # first conv layer
+    conv_pool_1 = paddle.networks.simple_img_conv_pool(
+        input=img,
+        filter_size=5,
+        num_filters=20,
+        num_channel=1,
+        pool_size=2,
+        pool_stride=2,
+        act=paddle.activation.Relu())
+    # second conv layer
+    conv_pool_2 = paddle.networks.simple_img_conv_pool(
+        input=conv_pool_1,
+        filter_size=5,
+        num_filters=50,
+        num_channel=20,
+        pool_size=2,
+        pool_stride=2,
+        act=paddle.activation.Relu())
+    # fully-connected layer
+    predict = paddle.layer.fc(
+        input=conv_pool_2, size=10, act=paddle.activation.Softmax())
+    return predict
+
+paddle.init(use_gpu=False,trainer_count=1)
 img = paddle.layer.data(name="img", type=paddle.data_type.dense_vector(784))
-hidden = paddle.layer.fc(input=img, size=200, act=paddle.activation.Tanh())
-hidden = paddle.layer.fc(input=hidden, size=200, act=paddle.activation.Tanh())
-prediction = paddle.layer.fc(input=hidden, size=10,
-                             act=paddle.activation.Softmax())
+prediction = convolutional_neural_network(img)
 
 # Save the inference topology to protobuf.
 inference_topology = paddle.topology.Topology(layers=prediction)
@@ -35,13 +56,13 @@ def train_event_handler(ev):
                 ev.pass_id, ev.batch_id + 1, ev.cost, ev.metrics)
     elif isinstance(ev, paddle.event.EndPass):
         result = trainer.test(reader=paddle.batch(test_reader, 100))
-        print 'Saving Pass %d to param_%d.tar.gz, test %s' % (ev.pass_id, ev.pass_id, result.metrics)
+        print 'Saving Pass %d to param_%d.tar, test %s' % (ev.pass_id, ev.pass_id, result.metrics)
         with open('param_%d.tar' % ev.pass_id, 'w') as f:
             params.to_tar(f)
 
 trainer.train(
     reader=paddle.batch(paddle.reader.shuffle(train_reader, 81920), 100),
-    num_passes=100,
+    num_passes=10000,
     event_handler=train_event_handler)
 
 print 'Training done.'
